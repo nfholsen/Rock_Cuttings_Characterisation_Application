@@ -1,62 +1,16 @@
 import pandas as pd
 from PIL import Image
 import random
-import numpy as np
 import streamlit as st
-from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import accuracy_score
+
+from helpers import plot_confusion_matrix
 import matplotlib.pyplot as plt
 
 
-N = 20
-
+N = 4 # Number of samples per class min = 1 max = 20
+n_samples = N * 5
 st.set_page_config(layout="wide")
-
-
-def plot_confusion_matrix(y_true, y_pred, classes,
-                          normalize=False,
-                          title=None,
-                          cmap=plt.cm.Blues):
-
-    cm = confusion_matrix(y_true, y_pred,normalize="true") if normalize else confusion_matrix(y_true, y_pred)
-
-    cm_all = confusion_matrix(y_true, y_pred)
-    # Only use the labels that appear in the data
-    #classes = classes[unique_labels(y_true, y_pred)]
-
-    fig, ax = plt.subplots()
-    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
-        
-    bottom, top = ax.get_ylim()
-    
-    # We want to show all ticks...
-    ax.set(xticks=np.arange(cm.shape[1]),
-           yticks=np.arange(cm.shape[0]),
-           # ... and label them with the respective list entries
-           xticklabels=classes, yticklabels=classes,
-           title=title,
-           ylabel='True label',
-           xlabel='Predicted label')
-    ax.set_ylim(bottom, top)
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-             rotation_mode="anchor")
-
-    # Loop over data dimensions and create text annotations.
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, format(cm[i, j], fmt),
-                    ha="center", va="center",
-                    color="white" if cm[i, j] > thresh else "black")
-        ax.text(cm.shape[0] + 0.5, i, cm_all.sum(axis=1)[i],
-                ha="center", va="center")
-    ax.text(cm.shape[0] + 0.5, -1, "N Samples",
-            ha="center", va="center")
-    fig.tight_layout()
-    plt.grid(False)
-    return fig
-
 
 
 def run():
@@ -79,17 +33,14 @@ def run():
         st.session_state.preds = []
 
     if 'random_idx' not in st.session_state:
-        st.session_state.random_idx = random.sample(range(0,N), N)
+        st.session_state.random_idx = random.sample(range(0,n_samples), n_samples)
 
     def next_image(id_pressed):
 
         label = labels[st.session_state["random_idx"][st.session_state["counter"]]]
 
         st.session_state.preds.append((id_pressed,label))
-
-        print(st.session_state.preds)
-
-        st.session_state["counter"] += 1
+        st.session_state["counter"] += 1        
 
     def restart():
         st.session_state["counter"] = 0
@@ -99,14 +50,16 @@ def run():
 
     # Create dictionary to map test names to CSV file paths - First : example, Second : pred
     test_csv_paths = {
-        'Lab/Lab': ['data/lab/train_test_train_mar.csv','data/lab/train_test_test_mar.csv'],
-        'Lab/Borehole': ['data/lab/train_test_train_mar.csv','data/borehole/train_test_test_mar.csv'],
-        'Borehole/Borehole': ['data/borehole/train_test_train_mar.csv','data/borehole/train_test_test_mar.csv'],
-        'Borehole/Lab': ['data/borehole/train_test_train_mar.csv','data/lab/train_test_test_mar.csv']
+        'Lab/Lab': ['config/lab/train_test_train_mar.csv','config/lab/train_test_test_mar.csv'],
+        'Lab/Borehole': ['config/lab/train_test_train_mar.csv','config/borehole/train_test_test_mar.csv'],
+        'Borehole/Borehole': ['config/borehole/train_test_train_mar.csv','config/borehole/train_test_test_mar.csv'],
+        'Borehole/Lab': ['config/borehole/train_test_train_mar.csv','config/lab/train_test_test_mar.csv']
     }
 
     ### Explanation ###
-    st.sidebar.write('This app allows for the user to classify rock cutings. There are 5 types of rock :')
+    st.sidebar.title('Rock Cuttings Classification App')
+    st.sidebar.write('This app is used to produce results for the paper entilted Micro CT characterization of rock cuttings with Deep Learning.')
+    st.sidebar.write('It allows for the user to classify rock cuttings obtained when drilling boreholes. There are 5 types of rock, 20 for each class for a total of 100 samples to classify for each test. The rocks are the following')
     st.sidebar.table(
         {
             'BL':'Bioclastic limestone',
@@ -116,7 +69,6 @@ def run():
             'OL':'Oolithic limestone'
         }
     )
-    st.sidebar.write('How to proceed : select a test (it will start automatically), complete the test, when the last image is reached you can download the results and send it to nils.olsench@gmail.com')
 
     ### Test selection ###
     test_name  = st.sidebar.selectbox('Select test', options=list(test_csv_paths.keys()),on_change=restart)
@@ -128,13 +80,19 @@ def run():
     with col2:
         restart_but = st.button('Restart', on_click=restart)
 
-    if st.session_state["counter"] < N :
+    with st.sidebar.expander("How to proceed"):
+        st.write(
+            '1. Select a test (it will start automatically)\n2. Complete the test\n3. when the last image is reached you can download the results and send the file to nils.olsench@gmail.com')
+
+    st.sidebar.write('More on : https://github.com/nfholsen/Rock_Cuttings_Characterisation')
+
+    if st.session_state["counter"] < n_samples:
 
         # Data
         # Images
-        df_images = pd.read_csv(test_csv_paths[test_name][1], index_col=0)
-        images = df_images['Paths_Test'].tolist()[:N]
-        labels = df_images['Label'].tolist()[:N]
+        df_images = pd.read_csv(test_csv_paths[test_name][1], index_col=0).groupby(by=['Label']).sample(n=N,random_state=0).reset_index(drop=True)
+        images = df_images['Paths_Test'].tolist()
+        labels = df_images['Label'].tolist()
         # Examples
         df_examples = pd.read_csv(test_csv_paths[test_name][0], index_col=0)
         examples = df_examples['Paths_Test'].tolist()
@@ -150,7 +108,7 @@ def run():
         img_path = images[st.session_state["random_idx"][st.session_state["counter"]]]
         image = Image.open(img_path)
         image = image.resize((600, 600))
-        col1_main.image(image,caption=f"Image {st.session_state['counter']+1}/{N}")
+        col1_main.image(image,caption=f"Image {st.session_state['counter']+1}/{n_samples}")
 
         # Buttons for predictions
         col1, col2, col3, col4, col5 = col1_main.columns([1,1,1,1,1])
@@ -193,8 +151,6 @@ def run():
         fig = plot_confusion_matrix(df_results['Label'], df_results['Prediction'], ['BL','GN', 'ML', 'MS', 'OL'])
 
         st.pyplot(fig)
-
-
 
 if __name__ == '__main__':
     run()
