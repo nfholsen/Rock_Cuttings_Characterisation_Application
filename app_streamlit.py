@@ -129,7 +129,7 @@ def run():
             st.button(f'Oolithic limestone',key=f'but5',on_click=next_image,kwargs={'id_pressed':4})
 
         ### Column 2 - Examples
-        col2_main.write('Examples for Lab cuttings')
+        col2_main.write(f'Examples for {test_name.split("/")[0]} cuttings')
         col1, col2, col3, col4, col5 = col2_main.columns(5)
 
         for i, (col, label) in enumerate(zip([col1, col2, col3, col4, col5],['BL','GN', 'ML', 'MS', 'OL'])):
