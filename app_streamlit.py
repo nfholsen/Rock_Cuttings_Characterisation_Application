@@ -8,7 +8,7 @@ from helpers import plot_confusion_matrix
 import matplotlib.pyplot as plt
 
 
-N = 4 # Number of samples per class min = 1 max = 20
+N = 10 # Number of samples per class min = 1 max = 20
 n_samples = N * 5
 st.set_page_config(layout="wide")
 
@@ -59,7 +59,7 @@ def run():
     ### Explanation ###
     st.sidebar.title('Rock Cuttings Classification App')
     st.sidebar.write('This app is used to produce results for the paper entilted Micro CT characterization of rock cuttings with Deep Learning.')
-    st.sidebar.write('It allows for the user to classify rock cuttings obtained when drilling boreholes. There are 5 types of rock, 20 for each class for a total of 100 samples to classify for each test. The rocks are the following')
+    st.sidebar.write(f'It allows for the user to classify rock cuttings obtained when drilling boreholes. There are 5 types of rock, {N} for each class for a total of {n_samples} samples to classify for each test. The rocks are the following')
     st.sidebar.table(
         {
             'BL':'Bioclastic limestone',
