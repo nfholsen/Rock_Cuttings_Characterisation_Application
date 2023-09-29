@@ -8,7 +8,7 @@ from helpers import plot_confusion_matrix
 import matplotlib.pyplot as plt
 
 
-N = 10 # Number of samples per class min = 1 max = 20
+N = 20 # Number of samples per class min = 1 max = 20
 n_samples = N * 5
 st.set_page_config(layout="wide")
 
