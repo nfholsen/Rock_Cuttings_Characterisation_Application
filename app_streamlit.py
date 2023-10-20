@@ -1,5 +1,6 @@
 import pandas as pd
 from PIL import Image
+import PIL.ImageOps as ImageOps
 import random
 import streamlit as st
 from sklearn.metrics import accuracy_score
@@ -107,6 +108,7 @@ def run():
 
         img_path = images[st.session_state["random_idx"][st.session_state["counter"]]]
         image = Image.open(img_path)
+        image = ImageOps.pad(image,(256,256),method=Image.BILINEAR)
         image = image.resize((600, 600))
         col1_main.image(image,caption=f"Image {st.session_state['counter']+1}/{n_samples}")
 
@@ -136,7 +138,7 @@ def run():
             with col:
                 st.write(label)
                 for j in range(5):
-                    col.image(Image.open(examples[i*10 + j]).resize((400, 400)))
+                    col.image(ImageOps.pad(Image.open(examples[i*10 + j]),(256,256),method=Image.BILINEAR).resize((400, 400)))
 
     else:
         st.warning('You reached the last image, click on send, restart or select an other test')
